@@ -8,7 +8,7 @@ Production-ready full-stack app to chat with Groq, with optional PDF upload supp
 - AI chat (`/ask-question`) powered by Groq, with PDF context used when available
 - Typing animation, loading skeletons, smooth scroll chat
 - Light/Dark mode toggle and mobile responsive UI
-- Backend security middleware, rate limiting, global error handling
+- Backend security middleware, rate limiting, and global error handling
 - Reusable Axios API layer with toast notifications
 
 ## Project Structure
@@ -51,8 +51,6 @@ npm run dev
 - `FRONTEND_URL=http://localhost:5173`
 - `GROQ_API_KEY=...`
 - `GROQ_MODEL=llama-3.3-70b-versatile`
-- `HUGGING_FACE_API_KEY=` optional, only needed if you want embedding-based PDF retrieval
-- `HUGGING_FACE_EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2`
 - `RATE_LIMIT_MAX=150`
 
 ### Frontend (`frontend/.env`)
