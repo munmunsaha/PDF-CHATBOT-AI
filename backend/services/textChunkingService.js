@@ -1,10 +1,4 @@
-let RecursiveCharacterTextSplitter;
-
-try {
-  ({ RecursiveCharacterTextSplitter } = require('@langchain/textsplitters'));
-} catch (_error) {
-  ({ RecursiveCharacterTextSplitter } = require('langchain/text_splitter'));
-}
+import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
 
 const splitter = new RecursiveCharacterTextSplitter({
   chunkSize: 1000,
@@ -12,7 +6,10 @@ const splitter = new RecursiveCharacterTextSplitter({
   separators: ['\n\n', '\n', '. ', ' ', ''],
 });
 
-async function splitTextIntoChunks(text) {
+/**
+ * Split text into chunks using RecursiveCharacterTextSplitter.
+ */
+export const splitTextIntoChunks = async (text) => {
   const normalizedText = String(text || '').trim();
   if (!normalizedText) {
     return [];
@@ -20,8 +17,4 @@ async function splitTextIntoChunks(text) {
 
   const chunks = await splitter.splitText(normalizedText);
   return chunks.map((chunk) => chunk.trim()).filter(Boolean);
-}
-
-module.exports = {
-  splitTextIntoChunks,
 };

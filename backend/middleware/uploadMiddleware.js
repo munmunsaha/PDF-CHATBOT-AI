@@ -1,59 +1,41 @@
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
-const { AppError } = require('../utils/AppError');
+import multer from 'multer';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-const tempUploadDir = path.join(__dirname, '..', 'uploads', 'temp');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-if (!fs.existsSync(tempUploadDir)) {
-  fs.mkdirSync(tempUploadDir, { recursive: true });
-}
-
-function pdfFileFilter(_req, file, cb) {
-  const isPdfMime = file.mimetype === 'application/pdf';
-  const isPdfExt = path.extname(file.originalname || '').toLowerCase() === '.pdf';
-
-  if (!isPdfMime || !isPdfExt) {
-    return cb(new AppError('Only PDF files are allowed.', 400));
-  }
-
-  cb(null, true);
-}
+const uploadDir = path.join(__dirname, '..', 'uploads', 'temp');
 
 const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, tempUploadDir),
-  filename: (_req, file, cb) => {
-    const safeName = `${Date.now()}-${Math.round(Math.random() * 1e9)}${path.extname(file.originalname)}`;
-    cb(null, safeName);
+  destination: (req, file, cb) => {
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${Date.now()}-${file.originalname}`);
   },
 });
 
-const upload = multer({
+const fileFilter = (req, file, cb) => {
+  if (file.mimetype === 'application/pdf') {
+    cb(null, true);
+  } else {
+    cb(new Error('Invalid file type. Only PDF is allowed.'), false);
+  }
+};
+
+export const upload = multer({
   storage,
-  limits: {
-    fileSize: 30 * 1024 * 1024,
-  },
-  fileFilter: pdfFileFilter,
+  fileFilter,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
 });
 
-function handleUploadError(err, _req, _res, next) {
+export const handleUploadError = (err, req, res, next) => {
   if (err instanceof multer.MulterError) {
-    if (err.code === 'LIMIT_FILE_SIZE') {
-      return next(new AppError('PDF file is too large. Maximum size is 30 MB.', 413));
-    }
-    return next(new AppError(err.message, 400));
+    return res.status(400).json({ error: `Multer Error: ${err.message}` });
   }
-
   if (err) {
-    return next(err);
+    return res.status(400).json({ error: err.message });
   }
-
   next();
-}
-
-module.exports = {
-  upload,
-  handleUploadError,
-  pdfFileFilter,
-  tempUploadDir,
 };

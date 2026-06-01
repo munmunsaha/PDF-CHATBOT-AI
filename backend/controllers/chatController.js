@@ -1,51 +1,48 @@
-const pdfService = require('../services/pdfService');
-const vectorStoreService = require('../services/vectorStoreService');
-const aiService = require('../services/aiService');
-const { AppError } = require('../utils/AppError');
+import * as vectorStoreService from '../services/vectorStoreService.js';
+import * as groqService from '../services/groqService.js';
 
-let activeDocument = null;
+/**
+ * Handle chat questions by retrieving relevant chunks and querying Groq.
+ */
+export const chat = async (req, res) => {
+  try {
+    const { question } = req.body;
 
-exports.uploadPdf = async (req, res) => {
-  if (!req.file) {
-    throw new AppError('No PDF file received.', 400);
+    if (!question) {
+      return res.status(400).json({ error: 'Question is required.' });
+    }
+
+    let vectorStore = vectorStoreService.getActiveVectorStore();
+
+    if (!vectorStore) {
+      try {
+        vectorStore = await vectorStoreService.loadVectorStore();
+      } catch (error) {
+        return res.status(400).json({ error: 'No indexed PDF found. Please upload a PDF first.' });
+      }
+    }
+
+    // Similarity search (k=4)
+    const contextResults = await vectorStoreService.similaritySearch(vectorStore, question, 4);
+    
+    if (!contextResults.length) {
+      return res.status(200).json({
+        answer: 'The uploaded document does not seem to contain information related to your question.',
+        context: [],
+      });
+    }
+
+    const contextText = contextResults.map((res) => res.text).join('\n\n---\n\n');
+
+    // Query Groq
+    const answer = await groqService.askGroq(contextText, question);
+
+    return res.status(200).json({
+      answer,
+      context: contextResults.map((c) => ({ text: c.text, metadata: c.metadata })),
+    });
+  } catch (error) {
+    console.error('Chat Error:', error);
+    return res.status(500).json({ error: error.message });
   }
-
-  const parsed = await pdfService.extractAndChunkPdf(req.file.buffer, req.file.originalname);
-  if (!parsed.chunks.length) {
-    throw new AppError('PDF contained no readable text.', 400);
-  }
-
-  const vectorStore = await vectorStoreService.buildVectorStore(parsed.chunks);
-  vectorStoreService.setActiveVectorStore(vectorStore);
-  await vectorStoreService.saveVectorStore(vectorStore);
-
-  activeDocument = {
-    name: req.file.originalname,
-    size: req.file.size,
-    chunks: parsed.chunks.length,
-    uploadedAt: new Date().toISOString(),
-  };
-
-  return res.status(200).json({
-    success: true,
-    message: 'PDF uploaded and indexed successfully.',
-    document: activeDocument,
-  });
-};
-
-exports.askQuestion = async (req, res) => {
-  const question = req.body?.question;
-
-  if (!question || typeof question !== 'string' || !question.trim()) {
-    throw new AppError('Question is required.', 400);
-  }
-
-  const result = await aiService.answerQuestion(question);
-
-  return res.status(200).json({
-    success: true,
-    answer: result.answer,
-    context: result.context,
-    document: activeDocument,
-  });
 };

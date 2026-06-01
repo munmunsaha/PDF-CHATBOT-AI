@@ -1,36 +1,44 @@
-const app = require('./app');
-const { ensureUploadsDir } = require('./utils/fileSystem');
-const { getEmbeddingHealth } = require('./services/embeddingService');
+import http from 'http';
+import dotenv from 'dotenv';
+import fs from 'fs/promises';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import app from './app.js';
 
-const PORT = process.env.PORT || 4000;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-ensureUploadsDir();
+dotenv.config();
 
-const embeddingHealth = getEmbeddingHealth();
-if (!embeddingHealth.ready) {
-  console.warn(`Embedding service not ready: ${embeddingHealth.message}`);
-} else {
-  console.log(`Embedding service ready with model: ${embeddingHealth.model}`);
-}
+const PORT = process.env.PORT || 5000;
 
-const server = app.listen(PORT, () => {
-  console.log(`🚀 Backend listening on http://localhost:${PORT}`);
-});
+/**
+ * Ensure necessary directories exist.
+ */
+const ensureDirs = async () => {
+  const dirs = [
+    path.join(__dirname, 'uploads', 'temp'),
+    path.join(__dirname, 'uploads', 'vector-db'),
+  ];
 
-function shutdown(signal) {
-  console.log(`${signal} received. Shutting down gracefully...`);
-  server.close(() => {
-    process.exit(0);
-  });
-}
+  for (const dir of dirs) {
+    await fs.mkdir(dir, { recursive: true });
+  }
+};
 
-process.on('SIGINT', () => shutdown('SIGINT'));
-process.on('SIGTERM', () => shutdown('SIGTERM'));
+const startServer = async () => {
+  try {
+    await ensureDirs();
 
-process.on('unhandledRejection', (error) => {
-  console.error('Unhandled Promise Rejection:', error);
-});
+    const server = http.createServer(app);
 
-process.on('uncaughtException', (error) => {
-  console.error('Uncaught Exception:', error);
-});
+    server.listen(PORT, () => {
+      console.log(`🚀 Backend listening on http://localhost:${PORT}`);
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+};
+
+startServer();

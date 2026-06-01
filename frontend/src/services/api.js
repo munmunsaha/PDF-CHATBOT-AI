@@ -1,38 +1,38 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
-export const api = axios.create({
-  baseURL: API_URL,
-  timeout: 60000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+const api = axios.create({
+  baseURL: API_BASE_URL,
 });
 
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    const message =
-      error?.response?.data?.message ||
-      error?.response?.data?.error ||
-      error?.message ||
-      'Something went wrong while calling the API.';
-    return Promise.reject(new Error(message));
-  }
-);
+/**
+ * Upload a PDF file to the backend.
+ * @param {File} file 
+ */
+export const uploadPdf = async (file) => {
+  const formData = new FormData();
+  formData.append('pdf', file);
 
-export const uploadPdfApi = async (formData, onUploadProgress) => {
-  const response = await api.post('/upload-pdf', formData, {
+  const response = await api.post('/upload', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
-    onUploadProgress,
   });
+
   return response.data;
 };
 
-export const askQuestionApi = async (question) => {
-  const response = await api.post('/ask-question', { question });
+/**
+ * Send a chat question to the backend.
+ * @param {string} question 
+ */
+export const askQuestion = async (question) => {
+  const response = await api.post('/chat', { question });
   return response.data;
+};
+
+export default {
+  uploadPdf,
+  askQuestion,
 };

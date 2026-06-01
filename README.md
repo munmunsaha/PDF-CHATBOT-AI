@@ -1,72 +1,83 @@
-# AI PDF Chat App
+# DocChat: AI PDF Assistant (RAG Pipeline)
 
-Production-ready full-stack app to chat with Groq, with optional PDF upload support for context-aware answers.
+DocChat is a production-ready, RAG-based PDF Chatbot that allows users to upload PDF documents and ask questions grounded strictly in the document's content. It leverages Groq for lightning-fast inference and Hugging Face for high-quality embeddings.
 
-## Highlights
+![DocChat UI](/home/codelouds-munmum/.gemini/antigravity/brain/99e844ec-38e0-4601-8941-20c9a957def6/docchat_ui_final_1780319054167.png)
 
-- Optional PDF upload with drag/drop, validation, and preview
-- AI chat (`/ask-question`) powered by Groq, with PDF context used when available
-- Typing animation, loading skeletons, smooth scroll chat
-- Light/Dark mode toggle and mobile responsive UI
-- Backend security middleware, rate limiting, and global error handling
-- Reusable Axios API layer with toast notifications
+## 🚀 Features
+- **Modern Dark UI**: Premium design with sidebar and responsive chat interface.
+- **Real-time PDF Preview**: Instantly view your uploaded document in the browser.
+- **Context-Aware Chat**: Advanced RAG flow for accurate answers based on PDF content.
+- **Fast Inference**: Powered by Groq's Llama 3 models.
+- **Persistent Storage**: Uses FAISS vector database for efficient similarity search.
 
-## Project Structure
+## 🛠️ Tech Stack
+- **Frontend**: React, Vite, Bootstrap, Vanilla CSS.
+- **Backend**: Node.js, Express (ES Modules).
+- **AI/ML**:
+  - **LLM**: Groq (`llama-3.3-70b-versatile`).
+  - **Embeddings**: Hugging Face (`sentence-transformers/all-MiniLM-L6-v2`).
+  - **Vector Store**: FAISS (`faiss-node`).
+  - **Orchestration**: LangChain JS.
 
-- `frontend/` React + Vite + Bootstrap
-- `backend/` Express + Groq + PDF context retrieval
+## 📋 Prerequisites
+- Node.js (v18 or higher)
+- [Groq API Key](https://console.groq.com/)
+- [Hugging Face Access Token](https://huggingface.co/settings/tokens)
 
-## API Endpoints
+## ⚙️ Installation & Setup
 
-- `POST /upload-pdf` upload and store PDF context
-- `POST /ask-question` ask a question using Groq, with PDF context when available
-- `GET /health` health check
+### 1. Clone the Repository
+```bash
+git clone <your-repo-url>
+cd ai-pdf-chat-app
+```
 
-## Local Setup
-
-### 1. Backend
-
+### 2. Backend Configuration
+Navigate to the `backend` folder and install dependencies:
 ```bash
 cd backend
-cp .env.example .env
 npm install
-npm run dev
+```
+Create a `.env` file based on `.env.example`:
+```env
+GROQ_API_KEY=your_groq_api_key
+HUGGINGFACE_API_KEY=your_hugging_face_token
+PORT=5000
 ```
 
-### 2. Frontend
+### 3. Frontend Configuration
+Navigate to the `frontend` folder and install dependencies:
+```bash
+cd ../frontend
+npm install
+```
 
+## 🏃 Running the Application
+
+### Start the Backend
+```bash
+cd backend
+npm start
+```
+*The server will run at http://localhost:5000*
+
+### Start the Frontend
 ```bash
 cd frontend
-cp .env.example .env
-npm install
 npm run dev
 ```
+*The app will be available at http://localhost:5173*
 
-## Environment Variables
+## 🧠 The RAG Flow (How it Works)
 
-### Backend (`backend/.env`)
+1. **Upload**: User uploads a PDF via the sidebar.
+2. **Parsing**: `pdf-parse` extracts raw text from the document.
+3. **Chunking**: `RecursiveCharacterTextSplitter` breaks text into manageable 1000-character overlaps.
+4. **Embedding**: Chunks are converted into high-dimensional vectors using Hugging Face.
+5. **Indexing**: Vectors are stored in a **FAISS** index for fast searching.
+6. **Querying**: When you ask a question, the app finds the **Top 4** most relevant chunks.
+7. **Inference**: The context + question are sent to **Groq**, which generates a precise answer.
 
-- `NODE_ENV=development|production`
-- `PORT=4000`
-- `FRONTEND_URL=http://localhost:5173`
-- `GROQ_API_KEY=...`
-- `GROQ_MODEL=llama-3.3-70b-versatile`
-- `RATE_LIMIT_MAX=150`
-
-### Frontend (`frontend/.env`)
-
-- `VITE_API_URL=http://localhost:4000`
-
-## Production Best Practices Implemented
-
-- `helmet` for HTTP hardening
-- `compression` for response compression
-- `express-rate-limit` for abuse protection
-- Global error middleware with request IDs
-- Centralized Axios error normalization
-- Graceful shutdown signal handling
-- UI feedback through toasts, skeletons, and status messaging
-
-## Deployment
-
-See [DEPLOYMENT.md](/var/www/html/chatBot/ai-pdf-chat-app/DEPLOYMENT.md).
+## 🤝 Support
+If you encounter any issues, please check your `.env` keys and ensure the backend is running before using the chat.

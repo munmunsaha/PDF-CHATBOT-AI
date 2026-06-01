@@ -1,61 +1,56 @@
-const Groq = require('groq-sdk');
-const { AppError } = require('../utils/AppError');
+import { ChatGroq } from '@langchain/groq';
+import dotenv from 'dotenv';
 
-const DEFAULT_MODEL = 'llama-3.3-70b-versatile';
+dotenv.config();
 
-function getGroqHealth() {
-  const apiKey = process.env.GROQ_API_KEY || '';
-  const model = process.env.GROQ_MODEL || DEFAULT_MODEL;
-
-  return {
-    configured: Boolean(apiKey),
-    model,
-    ready: Boolean(apiKey),
-    message: apiKey ? 'Groq is configured.' : 'GROQ_API_KEY is not configured.',
-  };
-}
-
-function createGroqClient() {
+/**
+ * Create and return an instance of LangChain ChatGroq.
+ */
+export const createGroqClient = () => {
   const apiKey = process.env.GROQ_API_KEY;
+  const model = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
+
   if (!apiKey) {
-    throw new AppError('GROQ_API_KEY is not configured.', 500);
+    throw new Error('GROQ_API_KEY is not configured in environment variables.');
   }
 
-  return new Groq({ apiKey });
-}
+  return new ChatGroq({
+    apiKey,
+    model, // Try 'model' instead of 'modelName'
+    temperature: 0,
+  });
+};
 
-async function askGroq(context, question) {
+/**
+ * Generate a response using Groq based on context and question.
+ */
+export const askGroq = async (context, question) => {
   try {
-    const client = createGroqClient();
-    const prompt = `
-You are a helpful AI assistant.
+    const chat = createGroqClient();
 
-Answer ONLY using the provided PDF context.
+    const systemPrompt = `
+You are a helpful assistant answering questions about a PDF document.
 
-If the answer is not found, say:
-"Answer not found in the uploaded PDF."
+Rules:
+1. Use only the provided context.
+2. Provide detailed and accurate answers.
+3. Include bullet points where appropriate.
+4. Include relevant numbers, facts, and explanations found in the context.
+5. Do not use outside knowledge.
+6. If the answer is not available in the context, politely state that the information was not found in the uploaded document.
+7. Keep answers clear and well-structured.
 
 Context:
 ${context}
-
-Question:
-${question}
 `;
 
-    const completion = await client.chat.completions.create({
-      messages: [{ role: 'user', content: prompt }],
-      model: process.env.GROQ_MODEL || DEFAULT_MODEL,
-      temperature: 0.3,
-    });
+    const response = await chat.invoke([
+      ['system', systemPrompt],
+      ['user', question],
+    ]);
 
-    return completion.choices[0]?.message?.content || '';
+    return response.content;
   } catch (error) {
-    throw new AppError(`Groq request failed: ${error.message}`, 500);
+    throw new Error(`Groq request failed: ${error.message}`);
   }
-}
-
-module.exports = {
-  askGroq,
-  getGroqHealth,
-  DEFAULT_MODEL,
 };
