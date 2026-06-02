@@ -5,9 +5,21 @@ import ChatWindow from '../components/ChatWindow';
 const Home = () => {
   const [docInfo, setDocInfo] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
+  const [isDocumentReady, setIsDocumentReady] = useState(false);
 
   const handleUploadSuccess = (data, file) => {
-    if (data) setDocInfo(data);
+    if (data) {
+      setDocInfo(data);
+    } else if (file) {
+      setDocInfo((current) => current || {
+        filename: file.name,
+        pages: null,
+        chunks: null,
+      });
+    }
+
+    setIsDocumentReady(true);
+
     if (file) {
       if (previewUrl) URL.revokeObjectURL(previewUrl);
       setPreviewUrl(URL.createObjectURL(file));
@@ -62,7 +74,7 @@ const Home = () => {
         </div>
 
         <div className="flex-grow-1 d-flex flex-column" style={{minHeight: 0, overflow: 'hidden'}}>
-          <ChatWindow isDocumentReady={!!docInfo} />
+          <ChatWindow isDocumentReady={isDocumentReady} />
         </div>
       </main>
     </div>

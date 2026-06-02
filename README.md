@@ -43,7 +43,7 @@ Create a `.env` file based on `.env.example`:
 ```env
 GROQ_API_KEY=your_groq_api_key
 HUGGINGFACE_API_KEY=your_hugging_face_token
-PORT=5000
+PORT=4000
 ```
 
 ### 3. Frontend Configuration
@@ -60,7 +60,7 @@ npm install
 cd backend
 npm start
 ```
-*The server will run at http://localhost:5000*
+*The server will run at http://localhost:4000*
 
 ### Start the Frontend
 ```bash

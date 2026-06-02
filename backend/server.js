@@ -10,7 +10,7 @@ const __dirname = path.dirname(__filename);
 
 dotenv.config();
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 4000;
 
 /**
  * Ensure necessary directories exist.
@@ -31,6 +31,15 @@ const startServer = async () => {
     await ensureDirs();
 
     const server = http.createServer(app);
+
+    server.on('error', (error) => {
+      if (error.code === 'EADDRINUSE') {
+        console.error(`Port ${PORT} is already in use. Stop the process using that port or set a different PORT before starting the backend.`);
+        process.exit(1);
+      }
+
+      throw error;
+    });
 
     server.listen(PORT, () => {
       console.log(`🚀 Backend listening on http://localhost:${PORT}`);
